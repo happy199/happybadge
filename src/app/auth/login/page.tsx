@@ -21,29 +21,6 @@ export default function LoginPage() {
   // Récupérer l'URL de redirection depuis les paramètres
   const redirectTo = searchParams.get('redirect') || '/dashboard'
 
-  // Vérifier si l'utilisateur est déjà connecté (seulement une fois)
-  useEffect(() => {
-    let isMounted = true
-    
-    const checkUser = async () => {
-      try {
-        const { data: { session } } = await supabase.auth.getSession()
-        if (session && isMounted) {
-          // Utiliser window.location pour forcer une navigation complète
-          window.location.href = redirectTo
-        }
-      } catch (error) {
-        console.error('Error checking session:', error)
-      }
-    }
-    
-    checkUser()
-    
-    return () => {
-      isMounted = false
-    }
-  }, []) // Supprimer redirectTo des dépendances pour éviter les rechargements
-
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault()
     setLoading(true)
@@ -56,27 +33,23 @@ export default function LoginPage() {
 
       if (error) {
         toast({
-          title: "Erreur de connexion",
+          title: 'Erreur de connexion',
           description: error.message,
-          variant: "destructive",
+          variant: 'destructive',
         })
       } else if (data.user) {
         toast({
-          title: "Connexion réussie",
-          description: "Vous êtes maintenant connecté.",
+          title: 'Connexion réussie',
+          description: 'Vous êtes maintenant connecté.',
         })
-        
-        // Attendre un peu pour que la session soit mise à jour
-        setTimeout(() => {
-          // Utiliser window.location pour forcer une navigation complète
-          window.location.href = redirectTo
-        }, 100)
+        router.refresh() // Rafraîchit la session côté serveur
+        router.push(redirectTo) // Redirige côté client
       }
     } catch (error) {
       toast({
-        title: "Erreur",
-        description: "Une erreur inattendue s'est produite.",
-        variant: "destructive",
+        title: 'Erreur',
+        description: 'Une erreur inattendue s\'est produite.',
+        variant: 'destructive',
       })
     } finally {
       setLoading(false)
