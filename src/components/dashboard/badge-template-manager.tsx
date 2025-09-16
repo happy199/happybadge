@@ -20,8 +20,15 @@ export default function BadgeTemplateManager({ eventId, userId }: BadgeTemplateM
   const [templates, setTemplates] = useState<BadgeTemplate[]>([])
   const [loading, setLoading] = useState(true)
   const [showCreateForm, setShowCreateForm] = useState(false)
+  const [editingTemplate, setEditingTemplate] = useState<BadgeTemplate | null>(null)
   const [viewingTemplate, setViewingTemplate] = useState<BadgeTemplate | null>(null)
   const { toast } = useToast()
+
+  const handleEdit = (template: BadgeTemplate) => {
+    setViewingTemplate(null)
+    setEditingTemplate(template)
+    setShowCreateForm(true)
+  }
 
   const handleDelete = async () => {
     if (!viewingTemplate) return
@@ -106,10 +113,15 @@ export default function BadgeTemplateManager({ eventId, userId }: BadgeTemplateM
         <CreateTemplateForm
           eventId={eventId}
           userId={userId}
-          onCancel={() => setShowCreateForm(false)}
+          initialData={editingTemplate}
+          onCancel={() => {
+            setShowCreateForm(false)
+            setEditingTemplate(null)
+          }}
           onFormSubmit={() => {
             setShowCreateForm(false)
-            fetchTemplates() // Refresh the list after creation
+            setEditingTemplate(null)
+            fetchTemplates() // Refresh the list
           }}
         />
       </div>
@@ -123,7 +135,10 @@ export default function BadgeTemplateManager({ eventId, userId }: BadgeTemplateM
           <CardTitle>Modèles de Badge</CardTitle>
           <CardDescription>Gérez les modèles de badge pour cet événement.</CardDescription>
         </div>
-        <Button onClick={() => setShowCreateForm(true)}>
+        <Button onClick={() => {
+          setEditingTemplate(null)
+          setShowCreateForm(true)
+        }}>
           <PlusCircle className="h-4 w-4 mr-2" />
           Nouveau Modèle
         </Button>
@@ -187,9 +202,14 @@ export default function BadgeTemplateManager({ eventId, userId }: BadgeTemplateM
               >
                 Supprimer
               </Button>
-              <Button variant="outline" onClick={() => setViewingTemplate(null)}>
-                Fermer
-              </Button>
+              <div className="flex space-x-2">
+                <Button variant="secondary" onClick={() => handleEdit(viewingTemplate)}>
+                  Modifier
+                </Button>
+                <Button variant="outline" onClick={() => setViewingTemplate(null)}>
+                  Fermer
+                </Button>
+              </div>
             </div>
           </div>
         </div>
