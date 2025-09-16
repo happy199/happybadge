@@ -1,4 +1,6 @@
-import { supabase } from './supabase'
+import { createClient } from '@/lib/supabase'
+
+const supabase = createClient()
 
 export interface AnalyticsEvent {
   id: string

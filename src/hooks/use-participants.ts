@@ -1,13 +1,14 @@
 "use client"
 
 import { useState, useEffect } from 'react'
-import { supabase } from '@/lib/supabase'
+import { createClient } from '@/lib/supabase'
 import { Database } from '@/lib/database.types'
 
 type Participant = Database['public']['Tables']['participants']['Row']
 type ParticipantInsert = Database['public']['Tables']['participants']['Insert']
 
 export function useParticipants(eventId?: string) {
+  const [supabase] = useState(() => createClient())
   const [participants, setParticipants] = useState<Participant[]>([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)

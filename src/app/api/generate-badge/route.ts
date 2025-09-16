@@ -1,4 +1,4 @@
-import { createRouteHandlerClient } from '@supabase/auth-helpers-nextjs'
+import { createServerSupabaseClient } from '@/lib/supabase'
 import { cookies } from 'next/headers'
 import { NextResponse } from 'next/server'
 import sharp from 'sharp'
@@ -20,7 +20,7 @@ export async function POST(request: Request) {
   }
 
   const cookieStore = cookies()
-  const supabase = createRouteHandlerClient({ cookies: () => cookieStore })
+  const supabase = createServerSupabaseClient(cookieStore)
 
   try {
     // 1. Fetch the template data using the standard client to respect RLS

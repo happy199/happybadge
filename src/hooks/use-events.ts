@@ -1,7 +1,7 @@
 "use client"
 
 import { useState, useEffect } from 'react'
-import { supabase } from '@/lib/supabase'
+import { createClient } from '@/lib/supabase'
 import { Database } from '@/lib/database.types'
 import { useAuth } from '@/components/providers/auth-provider'
 
@@ -10,6 +10,7 @@ type EventInsert = Database['public']['Tables']['events']['Insert']
 type EventUpdate = Database['public']['Tables']['events']['Update']
 
 export function useEvents() {
+  const [supabase] = useState(() => createClient())
   const { user } = useAuth()
   const [events, setEvents] = useState<Event[]>([])
   const [loading, setLoading] = useState(true)
