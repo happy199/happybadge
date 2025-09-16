@@ -3,8 +3,9 @@ import { cookies } from 'next/headers'
 import { notFound } from 'next/navigation'
 import Link from 'next/link'
 import { Button } from '@/components/ui/button'
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { ArrowLeft, Calendar, MapPin } from 'lucide-react'
+import BadgeTemplateManager from '@/components/dashboard/badge-template-manager'
 
 type EventDetailPageProps = {
   params: {
@@ -16,13 +17,21 @@ export default async function EventDetailPage({ params }: EventDetailPageProps) 
   const cookieStore = cookies()
   const supabase = createServerClient(cookieStore)
 
+  const { data: { session } } = await supabase.auth.getSession()
+  const user = session?.user
+
   const { data: event, error } = await supabase
     .from('events')
     .select('*')
     .eq('id', params.id)
     .single()
 
-  if (error || !event) {
+  if (error || !event || !user) {
+    notFound()
+  }
+
+  // Ensure the logged-in user owns the event
+  if (event.user_id !== user.id) {
     notFound()
   }
 
@@ -70,6 +79,8 @@ export default async function EventDetailPage({ params }: EventDetailPageProps) 
               )}
             </CardContent>
           </Card>
+
+          <BadgeTemplateManager eventId={event.id} userId={user.id} />
         </div>
       </div>
     </div>
