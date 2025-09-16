@@ -7,10 +7,11 @@ import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
-import { supabase } from '@/lib/supabase'
+import { createClient } from '@/lib/supabase'
 import { useToast } from '@/hooks/use-toast'
 
 export default function LoginPage() {
+  const supabase = createClient()
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
   const [loading, setLoading] = useState(false)
@@ -24,7 +25,7 @@ export default function LoginPage() {
   // Vérifier si l'utilisateur est déjà connecté (seulement une fois)
   useEffect(() => {
     let isMounted = true
-    
+
     const checkUser = async () => {
       try {
         const { data: { session } } = await supabase.auth.getSession()
@@ -36,9 +37,9 @@ export default function LoginPage() {
         console.error('Error checking session:', error)
       }
     }
-    
+
     checkUser()
-    
+
     return () => {
       isMounted = false
     }
@@ -65,7 +66,7 @@ export default function LoginPage() {
           title: "Connexion réussie",
           description: "Vous êtes maintenant connecté.",
         })
-        
+
         // Attendre un peu pour que la session soit mise à jour
         setTimeout(() => {
           // Utiliser window.location pour forcer une navigation complète

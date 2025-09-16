@@ -7,7 +7,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { Textarea } from '@/components/ui/textarea'
-import { supabase } from '@/lib/supabase'
+import { createClient } from '@/lib/supabase'
 import { useAuth } from '@/components/providers/auth-provider'
 import { useToast } from '@/hooks/use-toast'
 import { generateSlug } from '@/lib/utils'
@@ -15,6 +15,7 @@ import { ArrowLeft, Calendar, MapPin, Upload } from 'lucide-react'
 import Link from 'next/link'
 
 export default function NewEventPage() {
+  const supabase = createClient()
   const { user } = useAuth()
   const router = useRouter()
   const { toast } = useToast()
@@ -205,4 +206,3 @@ export default function NewEventPage() {
     </div>
   )
 }
-
