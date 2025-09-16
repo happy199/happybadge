@@ -20,6 +20,7 @@ export default function BadgeTemplateManager({ eventId, userId }: BadgeTemplateM
   const [templates, setTemplates] = useState<BadgeTemplate[]>([])
   const [loading, setLoading] = useState(true)
   const [showCreateForm, setShowCreateForm] = useState(false)
+  const [viewingTemplate, setViewingTemplate] = useState<BadgeTemplate | null>(null)
   const { toast } = useToast()
 
   const fetchTemplates = useCallback(async () => {
@@ -93,17 +94,51 @@ export default function BadgeTemplateManager({ eventId, userId }: BadgeTemplateM
           <div className="space-y-4">
             {templates.map((template) => (
               <div key={template.id} className="flex items-center justify-between p-4 border rounded-lg">
-                <div>
-                  <p className="font-medium">{template.name}</p>
-                  <p className="text-sm text-muted-foreground">Forme: {template.shape}</p>
+                <div className="flex items-center space-x-4">
+                  <img
+                    src={template.frame_image_url}
+                    alt={`Cadre pour ${template.name}`}
+                    className="h-16 w-16 rounded-md object-cover bg-gray-100"
+                  />
+                  <div>
+                    <p className="font-medium">{template.name}</p>
+                    <p className="text-sm text-muted-foreground">Forme: {template.shape}</p>
+                  </div>
                 </div>
-                {/* Placeholder for future actions */}
-                <Button variant="outline" size="sm">Gérer</Button>
+                <Button variant="outline" size="sm" onClick={() => setViewingTemplate(template)}>
+                  Gérer
+                </Button>
               </div>
             ))}
           </div>
         )}
       </CardContent>
+
+      {viewingTemplate && (
+        <div
+          className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50"
+          onClick={() => setViewingTemplate(null)}
+        >
+          <div
+            className="bg-white p-4 rounded-lg shadow-xl max-w-xl w-full"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <h2 className="text-xl font-bold mb-4">{viewingTemplate.name}</h2>
+            <div className="relative">
+              <img
+                src={viewingTemplate.frame_image_url}
+                alt={`Aperçu pour ${viewingTemplate.name}`}
+                className="w-full h-auto rounded-md object-contain max-h-[70vh]"
+              />
+            </div>
+            <div className="mt-4 flex justify-end">
+              <Button variant="outline" onClick={() => setViewingTemplate(null)}>
+                Fermer
+              </Button>
+            </div>
+          </div>
+        </div>
+      )}
     </Card>
   )
 }
