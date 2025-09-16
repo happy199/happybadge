@@ -33,7 +33,6 @@ export default function PublicBadgeCreator({ templateId, templateName, frameImag
       const file = e.target.files[0]
       setUserImage(file)
 
-      // Create a new preview URL for the newly selected file
       if (previewUrl) {
         URL.revokeObjectURL(previewUrl)
       }
