@@ -1,10 +1,8 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { StripeService } from '@/lib/stripe'
-import { createRouteHandlerSupabaseClient } from '@/lib/supabase'
-import { cookies } from 'next/headers'
+import { supabase } from '@/lib/supabase'
 
 export async function POST(request: NextRequest) {
-  const supabase = createRouteHandlerSupabaseClient(cookies())
   try {
     const body = await request.text()
     const signature = request.headers.get('stripe-signature')
@@ -22,27 +20,27 @@ export async function POST(request: NextRequest) {
     // Mettre à jour la base de données selon le type d'événement
     switch (event.type) {
       case 'checkout.session.completed':
-        await handleCheckoutCompleted(event.data.object, supabase)
+        await handleCheckoutCompleted(event.data.object)
         break
       
       case 'customer.subscription.created':
-        await handleSubscriptionCreated(event.data.object, supabase)
+        await handleSubscriptionCreated(event.data.object)
         break
       
       case 'customer.subscription.updated':
-        await handleSubscriptionUpdated(event.data.object, supabase)
+        await handleSubscriptionUpdated(event.data.object)
         break
       
       case 'customer.subscription.deleted':
-        await handleSubscriptionDeleted(event.data.object, supabase)
+        await handleSubscriptionDeleted(event.data.object)
         break
       
       case 'invoice.payment_succeeded':
-        await handlePaymentSucceeded(event.data.object, supabase)
+        await handlePaymentSucceeded(event.data.object)
         break
       
       case 'invoice.payment_failed':
-        await handlePaymentFailed(event.data.object, supabase)
+        await handlePaymentFailed(event.data.object)
         break
     }
 
@@ -56,7 +54,7 @@ export async function POST(request: NextRequest) {
   }
 }
 
-async function handleCheckoutCompleted(session: any, supabase: any) {
+async function handleCheckoutCompleted(session: any) {
   const customerEmail = session.customer_email
   const subscriptionId = session.subscription
 
@@ -69,7 +67,7 @@ async function handleCheckoutCompleted(session: any, supabase: any) {
   }
 }
 
-async function handleSubscriptionCreated(subscription: any, supabase: any) {
+async function handleSubscriptionCreated(subscription: any) {
   const customerId = subscription.customer
   const subscriptionId = subscription.id
 
@@ -92,7 +90,7 @@ async function handleSubscriptionCreated(subscription: any, supabase: any) {
   }
 }
 
-async function handleSubscriptionUpdated(subscription: any, supabase: any) {
+async function handleSubscriptionUpdated(subscription: any) {
   const subscriptionId = subscription.id
   const status = subscription.status
 
@@ -105,7 +103,7 @@ async function handleSubscriptionUpdated(subscription: any, supabase: any) {
     .eq('stripe_subscription_id', subscriptionId)
 }
 
-async function handleSubscriptionDeleted(subscription: any, supabase: any) {
+async function handleSubscriptionDeleted(subscription: any) {
   const subscriptionId = subscription.id
 
   // Rétrograder l'utilisateur vers le plan gratuit
@@ -118,7 +116,7 @@ async function handleSubscriptionDeleted(subscription: any, supabase: any) {
     .eq('stripe_subscription_id', subscriptionId)
 }
 
-async function handlePaymentSucceeded(invoice: any, supabase: any) {
+async function handlePaymentSucceeded(invoice: any) {
   const customerId = invoice.customer
   const amount = invoice.amount_paid
 
@@ -134,7 +132,7 @@ async function handlePaymentSucceeded(invoice: any, supabase: any) {
     })
 }
 
-async function handlePaymentFailed(invoice: any, supabase: any) {
+async function handlePaymentFailed(invoice: any) {
   const customerId = invoice.customer
   const amount = invoice.amount_due
 

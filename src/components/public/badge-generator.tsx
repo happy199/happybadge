@@ -34,17 +34,46 @@ export default function BadgeGenerator({ templateId, frameImageUrl }: BadgeGener
       return
     }
     setLoading(true)
-    // TODO: Implement API call to generate and download badge
-    console.log("Submitting to API:", { templateId, userImage })
-    await new Promise(resolve => setTimeout(resolve, 2000)) // Simulate network delay
-    toast({ title: "Génération en cours...", description: "Cette fonctionnalité arrive bientôt."})
-    setLoading(false)
+
+    const formData = new FormData()
+    formData.append('userImage', userImage)
+    formData.append('templateId', templateId)
+
+    try {
+      const response = await fetch('/api/generate-badge', {
+        method: 'POST',
+        body: formData,
+      })
+
+      if (!response.ok) {
+        throw new Error('La génération du badge a échoué.')
+      }
+
+      const blob = await response.blob()
+      const url = window.URL.createObjectURL(blob)
+      const a = document.createElement('a')
+      a.href = url
+      a.download = 'badge-genere.png'
+      document.body.appendChild(a)
+      a.click()
+      document.body.removeChild(a)
+      window.URL.revokeObjectURL(url)
+
+    } catch (error: any) {
+      toast({
+        title: "Erreur",
+        description: error.message || "Une erreur s'est produite lors de la génération.",
+        variant: "destructive",
+      })
+    } finally {
+      setLoading(false)
+    }
   }
 
   return (
     <form onSubmit={handleSubmit} className="space-y-4">
       <div className="space-y-2">
-        <Label htmlFor="userImage" className="text-center block">Uploadez votre photo</Label>
+        <Label htmlFor="userImage" className="text-center block font-medium">Uploadez votre photo</Label>
         <div className="border-2 border-dashed border-gray-300 rounded-lg p-6 text-center">
           <Upload className="h-8 w-8 text-gray-400 mx-auto mb-2" />
           <Input

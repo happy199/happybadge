@@ -29,21 +29,12 @@ export default function NewEventPage() {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
-    if (!user) {
-      toast({
-        title: "Erreur d'authentification",
-        description: "Vous devez être connecté pour créer un événement.",
-        variant: "destructive",
-      })
-      return
-    }
+    if (!user) return
 
     setLoading(true)
 
     try {
-      const baseSlug = generateSlug(formData.title)
-      const randomSuffix = Math.random().toString(36).substring(2, 7)
-      const slug = `${baseSlug}-${randomSuffix}`
+      const slug = generateSlug(formData.title)
       
       const { data, error } = await supabase
         .from('events')
@@ -64,7 +55,7 @@ export default function NewEventPage() {
       if (error) {
         toast({
           title: "Erreur",
-          description: error.message || "Impossible de créer l'événement. Veuillez réessayer.",
+          description: "Impossible de créer l'événement. Veuillez réessayer.",
           variant: "destructive",
         })
       } else {

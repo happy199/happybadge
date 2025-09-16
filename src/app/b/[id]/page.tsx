@@ -11,15 +11,13 @@ type PublicBadgePageProps = {
 
 export default async function PublicBadgePage({ params }: PublicBadgePageProps) {
   const cookieStore = cookies()
-  // Note: We use createServerClient, which is fine for public data.
-  // The RLS policy we created handles access for non-authenticated users.
   const supabase = createServerClient(cookieStore)
 
   const { data: template, error } = await supabase
     .from('event_badge_templates')
     .select('*')
     .eq('id', params.id)
-    .eq('is_public', true) // Ensure we only fetch public templates
+    .eq('is_public', true)
     .single()
 
   if (error || !template) {
@@ -50,7 +48,6 @@ export default async function PublicBadgePage({ params }: PublicBadgePageProps) 
                 alt={`Cadre pour ${template.name}`}
                 className="absolute inset-0 w-full h-full object-cover z-10"
               />
-              {/* This is where the user's uploaded image will be previewed, for now it's just a placeholder */}
               <div className="w-full h-full bg-gray-300/50 flex items-center justify-center">
                 <p className="text-gray-500 text-sm">Votre photo ici</p>
               </div>
