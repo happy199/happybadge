@@ -1,18 +1,23 @@
-import { createClient } from '@supabase/supabase-js'
-import { Database } from './database.types'
+import {
+  createServerComponentClient,
+  createClientComponentClient,
+  createRouteHandlerClient,
+} from '@supabase/auth-helpers-nextjs'
+import { cookies } from 'next/headers'
 
-const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!
-const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
+import type { Database } from './database.types'
+import type { ReadonlyRequestCookies } from 'next/dist/server/web/spec-extension/adapters/request-cookies'
 
-export const supabase = createClient<Database>(supabaseUrl, supabaseAnonKey)
+export const createServerClient = (cookieStore: ReadonlyRequestCookies) =>
+  createServerComponentClient<Database>({
+    cookies: () => cookieStore,
+  })
 
-// Client pour les composants côté client
-export const createClientComponentClient = () => {
-  return createClient<Database>(supabaseUrl, supabaseAnonKey)
-}
+export const createRouteHandlerSupabaseClient = (
+  cookieStore: ReadonlyRequestCookies
+) =>
+  createRouteHandlerClient<Database>({
+    cookies: () => cookieStore,
+  })
 
-// Client pour les composants côté serveur
-export const createServerComponentClient = () => {
-  return createClient<Database>(supabaseUrl, supabaseAnonKey)
-}
-
+export const supabase = createClientComponentClient<Database>()
