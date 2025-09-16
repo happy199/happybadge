@@ -36,11 +36,6 @@ export default function CreateTemplateForm({
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
-
-    const { data: { user: clientUser } } = await supabase.auth.getUser()
-    console.log("User ID from props (server-side):", userId);
-    console.log("User ID from client-side auth:", clientUser?.id);
-
     if (!frameImage) {
       toast({
         title: "Image manquante",
