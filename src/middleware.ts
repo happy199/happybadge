@@ -1,66 +1,36 @@
-import { createServerClient } from '@supabase/ssr'
-import { NextResponse, type NextRequest } from 'next/server'
+import { createMiddlewareClient } from '@supabase/auth-helpers-nextjs'
+import { NextResponse } from 'next/server'
+import type { NextRequest } from 'next/server'
 
-export async function middleware(request: NextRequest) {
-  let response = NextResponse.next({
-    request: {
-      headers: request.headers,
-    },
-  })
+export async function middleware(req: NextRequest) {
+  const res = NextResponse.next()
+  const supabase = createMiddlewareClient({ req, res })
 
-  const supabase = createServerClient(
-    process.env.NEXT_PUBLIC_SUPABASE_URL!,
-    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
-    {
-      cookies: {
-        get(name: string) {
-          return request.cookies.get(name)?.value
-        },
-        set(name: string, value: string, options: any) {
-          request.cookies.set({ name, value, ...options })
-          response = NextResponse.next({
-            request: {
-              headers: request.headers,
-            },
-          })
-          response.cookies.set({ name, value, ...options })
-        },
-        remove(name: string, options: any) {
-          request.cookies.set({ name, value: '', ...options })
-          response = NextResponse.next({
-            request: {
-              headers: request.headers,
-            },
-          })
-          response.cookies.set({ name, value: '', ...options })
-        },
-      },
-    }
-  )
+  // This will refresh the session cookie
+  await supabase.auth.getSession()
 
-  // Refresh session if expired - `getUser` will do this automatically
-  const { data: { user } } = await supabase.auth.getUser()
-
-  // My custom logic for protected routes
+  // My custom logic for protected routes from previous versions
   const protectedRoutes = ['/dashboard']
-  const authRoutes = ['/auth/login', '/auth/register']
-  const { pathname } = request.nextUrl
+  const authRoutes = ['/auth/login', '/auth/register', '/auth/forgot-password', '/auth/reset-password']
+  const { pathname } = req.nextUrl
+
+  const { data: { session } } = await supabase.auth.getSession()
 
   const isProtectedRoute = protectedRoutes.some(route => pathname.startsWith(route))
   const isAuthRoute = authRoutes.some(route => pathname.startsWith(route))
 
-  if (isProtectedRoute && !user) {
-    const redirectUrl = new URL('/auth/login', request.url)
+  if (isProtectedRoute && !session) {
+    const redirectUrl = new URL('/auth/login', req.url)
     redirectUrl.searchParams.set('redirect', pathname)
     return NextResponse.redirect(redirectUrl)
   }
 
-  if (isAuthRoute && user) {
-    const redirectTo = request.nextUrl.searchParams.get('redirect') || '/dashboard'
-    return NextResponse.redirect(new URL(redirectTo, request.url))
+  if (isAuthRoute && session) {
+    const redirectTo = req.nextUrl.searchParams.get('redirect') || '/dashboard'
+    return NextResponse.redirect(new URL(redirectTo, req.url))
   }
 
-  return response
+  return res
 }
 
 export const config = {
