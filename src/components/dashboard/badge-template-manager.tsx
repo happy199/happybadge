@@ -23,6 +23,55 @@ export default function BadgeTemplateManager({ eventId, userId }: BadgeTemplateM
   const [viewingTemplate, setViewingTemplate] = useState<BadgeTemplate | null>(null)
   const { toast } = useToast()
 
+  const handleDelete = async () => {
+    if (!viewingTemplate) return
+
+    const isConfirmed = window.confirm(
+      `Êtes-vous sûr de vouloir supprimer le modèle "${viewingTemplate.name}" ? Cette action est irréversible.`
+    )
+
+    if (isConfirmed) {
+      try {
+        // 1. Delete image from storage
+        const url = viewingTemplate.frame_image_url
+        const filePath = url.substring(url.indexOf('/badge_frames/') + '/badge_frames/'.length)
+
+        const { error: storageError } = await supabase.storage
+          .from('badge_frames')
+          .remove([filePath])
+
+        if (storageError) {
+          // Log error but proceed, as the user might have deleted the file manually
+          console.error("Could not delete storage object, but proceeding with DB deletion:", storageError)
+        }
+
+        // 2. Delete template from database
+        const { error: dbError } = await supabase
+          .from('event_badge_templates')
+          .delete()
+          .eq('id', viewingTemplate.id)
+
+        if (dbError) {
+          throw dbError
+        }
+
+        toast({
+          title: "Modèle supprimé",
+          description: `Le modèle "${viewingTemplate.name}" a été supprimé.`,
+        })
+
+        setViewingTemplate(null)
+        fetchTemplates() // Refresh the list
+      } catch (error: any) {
+        toast({
+          title: "Erreur de suppression",
+          description: error.message,
+          variant: "destructive",
+        })
+      }
+    }
+  }
+
   const fetchTemplates = useCallback(async () => {
     setLoading(true)
     try {
@@ -131,7 +180,13 @@ export default function BadgeTemplateManager({ eventId, userId }: BadgeTemplateM
                 className="w-full h-auto rounded-md object-contain max-h-[70vh]"
               />
             </div>
-            <div className="mt-4 flex justify-end">
+            <div className="mt-4 flex justify-between">
+              <Button
+                variant="destructive"
+                onClick={handleDelete}
+              >
+                Supprimer
+              </Button>
               <Button variant="outline" onClick={() => setViewingTemplate(null)}>
                 Fermer
               </Button>
