@@ -4,6 +4,7 @@ import { useState, useEffect, useCallback } from 'react'
 import { supabase } from '@/lib/supabase'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
+import { Label } from '@/components/ui/label'
 import { PlusCircle } from 'lucide-react'
 import { useToast } from '@/hooks/use-toast'
 import type { Database } from '@/lib/database.types'
@@ -23,6 +24,69 @@ export default function BadgeTemplateManager({ eventId, userId }: BadgeTemplateM
   const [editingTemplate, setEditingTemplate] = useState<BadgeTemplate | null>(null)
   const [viewingTemplate, setViewingTemplate] = useState<BadgeTemplate | null>(null)
   const { toast } = useToast()
+
+  const handleDownload = async () => {
+    if (!viewingTemplate) return
+    try {
+      const response = await fetch(viewingTemplate.frame_image_url)
+      const blob = await response.blob()
+      const url = window.URL.createObjectURL(blob)
+      const a = document.createElement('a')
+      a.href = url
+      const fileExtension = viewingTemplate.frame_image_url.split('.').pop() || 'png'
+      a.download = `${viewingTemplate.name}-frame.${fileExtension}`
+      document.body.appendChild(a)
+      a.click()
+      document.body.removeChild(a)
+      window.URL.revokeObjectURL(url)
+    } catch (error) {
+      toast({
+        title: "Erreur de téléchargement",
+        description: "Impossible de télécharger l'image.",
+        variant: "destructive",
+      })
+    }
+  }
+
+  const handleCopyLink = () => {
+    if (!viewingTemplate) return
+    const publicUrl = `${window.location.origin}/b/${viewingTemplate.id}`
+    navigator.clipboard.writeText(publicUrl)
+    toast({
+      title: "Lien copié !",
+      description: "Le lien public a été copié dans votre presse-papiers.",
+    })
+  }
+
+  const handleTogglePublic = async () => {
+    if (!viewingTemplate) return
+
+    const newStatus = !viewingTemplate.is_public
+
+    try {
+      const { data, error } = await supabase
+        .from('event_badge_templates')
+        .update({ is_public: newStatus })
+        .eq('id', viewingTemplate.id)
+        .select()
+        .single()
+
+      if (error) throw error
+
+      setViewingTemplate(data) // Update the template in the modal view
+      fetchTemplates() // Refresh the list in the background
+      toast({
+        title: "Statut mis à jour",
+        description: `Le modèle est maintenant ${newStatus ? 'public' : 'privé'}.`,
+      })
+    } catch (error: any) {
+      toast({
+        title: "Erreur",
+        description: "Impossible de mettre à jour le statut.",
+        variant: "destructive",
+      })
+    }
+  }
 
   const handleEdit = (template: BadgeTemplate) => {
     setViewingTemplate(null)
@@ -195,6 +259,24 @@ export default function BadgeTemplateManager({ eventId, userId }: BadgeTemplateM
                 className="w-full h-auto rounded-md object-contain max-h-[70vh]"
               />
             </div>
+            <div className="border-t my-4"></div>
+            <div className="space-y-4">
+              <div className="flex items-center justify-between">
+                <Label htmlFor="public-status" className="font-medium">Statut Public</Label>
+                <Button onClick={handleTogglePublic} size="sm" variant="secondary">
+                  {viewingTemplate.is_public ? "Rendre Privé" : "Rendre Public"}
+                </Button>
+              </div>
+              {viewingTemplate.is_public && (
+                <div className="flex items-center justify-between">
+                  <Label htmlFor="public-link" className="font-medium">Lien de Partage</Label>
+                  <Button onClick={handleCopyLink} size="sm">
+                    Copier le lien
+                  </Button>
+                </div>
+              )}
+            </div>
+            <div className="border-t my-4"></div>
             <div className="mt-4 flex justify-between">
               <Button
                 variant="destructive"
@@ -203,6 +285,9 @@ export default function BadgeTemplateManager({ eventId, userId }: BadgeTemplateM
                 Supprimer
               </Button>
               <div className="flex space-x-2">
+                <Button variant="secondary" onClick={handleDownload}>
+                  Télécharger
+                </Button>
                 <Button variant="secondary" onClick={() => handleEdit(viewingTemplate)}>
                   Modifier
                 </Button>

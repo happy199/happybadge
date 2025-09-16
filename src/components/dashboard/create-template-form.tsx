@@ -41,7 +41,7 @@ export default function CreateTemplateForm({
       setName(initialData.name)
       setShape(initialData.shape)
     }
-  }, [isEditMode, initialData])
+  }, [isEditMode, initialData, setName, setShape])
 
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     if (e.target.files && e.target.files.length > 0) {
@@ -54,25 +54,16 @@ export default function CreateTemplateForm({
     setLoading(true)
 
     try {
-      if (isEditMode) {
-        // Update logic
-        const { error } = await supabase
-          .from('event_badge_templates')
-          .update({ name, shape })
-          .eq('id', initialData.id)
+      let frameUrl = isEditMode ? initialData.frame_image_url : ''
 
-        if (error) throw error
-        toast({ title: "Succès", description: "Modèle mis à jour." })
-      } else {
-        // Create logic
-        if (!frameImage) {
-          toast({
-            title: "Image manquante",
-            description: "Veuillez sélectionner une image pour le cadre.",
-            variant: "destructive",
-          })
-          setLoading(false)
-          return
+      // Handle file upload if a new image is provided (for both create and edit)
+      if (frameImage) {
+        // If editing, delete the old image first
+        if (isEditMode && initialData.frame_image_url) {
+          const oldFilePath = initialData.frame_image_url.substring(
+            initialData.frame_image_url.indexOf('/badge_frames/') + '/badge_frames/'.length
+          )
+          await supabase.storage.from('badge_frames').remove([oldFilePath])
         }
 
         const fileExtension = frameImage.name.split('.').pop()
@@ -88,16 +79,28 @@ export default function CreateTemplateForm({
           .from('badge_frames')
           .getPublicUrl(filePath)
         if (!urlData?.publicUrl) throw new Error("Impossible de récupérer l'URL publique de l'image.")
+        frameUrl = urlData.publicUrl
+      }
 
+      if (isEditMode) {
+        // Update logic
+        const { error } = await supabase
+          .from('event_badge_templates')
+          .update({ name, shape, frame_image_url: frameUrl })
+          .eq('id', initialData.id)
+
+        if (error) throw error
+        toast({ title: "Succès", description: "Modèle mis à jour." })
+      } else {
+        // Create logic
+        if (!frameUrl) {
+          toast({ title: "Image manquante", description: "Veuillez sélectionner une image pour le cadre.", variant: "destructive" })
+          setLoading(false)
+          return
+        }
         const { error: insertError } = await supabase
           .from('event_badge_templates')
-          .insert({
-            name,
-            shape,
-            event_id: eventId,
-            user_id: userId,
-            frame_image_url: urlData.publicUrl,
-          })
+          .insert({ name, shape, event_id: eventId, user_id: userId, frame_image_url: frameUrl })
         if (insertError) throw new Error(`Erreur base de données: ${insertError.message}`)
 
         toast({ title: "Modèle créé", description: "Votre nouveau modèle de badge a été créé avec succès." })
@@ -146,26 +149,24 @@ export default function CreateTemplateForm({
               required
             />
           </div>
-          {!isEditMode && (
-            <div className="space-y-2">
-              <Label htmlFor="frameImage">Image du cadre</Label>
-              <div className="border-2 border-dashed border-gray-300 rounded-lg p-6 text-center">
-                <Upload className="h-8 w-8 text-gray-400 mx-auto mb-2" />
-                <Input
-                  type="file"
-                  id="frameImage"
-                  accept="image/png, image/jpeg"
-                  onChange={handleFileChange}
-                  className="hidden"
-                  required={!isEditMode}
-                />
-                <label htmlFor="frameImage" className="cursor-pointer text-sm text-blue-600 hover:underline">
-                  {frameImage ? frameImage.name : 'Cliquez pour sélectionner une image'}
-                </label>
-                <p className="text-xs text-muted-foreground mt-1">PNG, JPG (MAX. 5MB)</p>
-              </div>
+          <div className="space-y-2">
+            <Label htmlFor="frameImage">{isEditMode ? "Remplacer l'image du cadre (optionnel)" : "Image du cadre *"}</Label>
+            <div className="border-2 border-dashed border-gray-300 rounded-lg p-6 text-center">
+              <Upload className="h-8 w-8 text-gray-400 mx-auto mb-2" />
+              <Input
+                type="file"
+                id="frameImage"
+                accept="image/png, image/jpeg"
+                onChange={handleFileChange}
+                className="hidden"
+                required={!isEditMode}
+              />
+              <label htmlFor="frameImage" className="cursor-pointer text-sm text-blue-600 hover:underline">
+                {frameImage ? frameImage.name : (isEditMode && initialData?.frame_image_url ? "Sélectionner une nouvelle image" : 'Cliquez pour sélectionner une image')}
+              </label>
+              <p className="text-xs text-muted-foreground mt-1">PNG, JPG (MAX. 5MB)</p>
             </div>
-          )}
+          </div>
           <div className="flex justify-end space-x-4">
             <Button type="button" variant="outline" onClick={onCancel}>
               Annuler
