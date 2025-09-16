@@ -34,7 +34,9 @@ export default function NewEventPage() {
     setLoading(true)
 
     try {
-      const slug = generateSlug(formData.title)
+      const baseSlug = generateSlug(formData.title)
+      const randomSuffix = Math.random().toString(36).substring(2, 7)
+      const slug = `${baseSlug}-${randomSuffix}`
       
       const { data, error } = await supabase
         .from('events')
