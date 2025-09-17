@@ -7,7 +7,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { Badge } from '@/components/ui/badge'
-import { supabase } from '@/lib/supabase'
+import { createClientComponentClient } from '@supabase/auth-helpers-nextjs'
 import { Database } from '@/lib/database.types'
 import { useToast } from '@/hooks/use-toast'
 import { Calendar, MapPin, Upload, Download, Share2 } from 'lucide-react'
@@ -15,6 +15,7 @@ import { Calendar, MapPin, Upload, Download, Share2 } from 'lucide-react'
 type Event = Database['public']['Tables']['events']['Row']
 
 export default function EventPage() {
+  const supabase = createClientComponentClient<Database>()
   const params = useParams()
   const slug = params.slug as string
   const { toast } = useToast()

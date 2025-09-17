@@ -6,7 +6,7 @@ import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
 import { useAuth } from '@/components/providers/auth-provider'
-import { supabase } from '@/lib/supabase'
+import { createClientComponentClient } from '@supabase/auth-helpers-nextjs'
 import { Database } from '@/lib/database.types'
 import { Plus, Calendar, Users, TrendingUp, Settings, LogOut } from 'lucide-react'
 import Link from 'next/link'
@@ -14,6 +14,7 @@ import Link from 'next/link'
 type Event = Database['public']['Tables']['events']['Row']
 
 export default function DashboardPage() {
+  const supabase = createClientComponentClient<Database>()
   const { user, loading, signOut } = useAuth()
   const [events, setEvents] = useState<Event[]>([])
   const [stats, setStats] = useState({

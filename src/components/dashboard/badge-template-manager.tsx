@@ -1,7 +1,7 @@
 "use client"
 
 import { useState, useEffect, useCallback } from 'react'
-import { supabase } from '@/lib/supabase'
+import { createClientComponentClient } from '@supabase/auth-helpers-nextjs'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { Label } from '@/components/ui/label'
@@ -18,6 +18,7 @@ type BadgeTemplateManagerProps = {
 }
 
 export default function BadgeTemplateManager({ eventId, userId }: BadgeTemplateManagerProps) {
+  const supabase = createClientComponentClient<Database>()
   const [templates, setTemplates] = useState<BadgeTemplate[]>([])
   const [loading, setLoading] = useState(true)
   const [showCreateForm, setShowCreateForm] = useState(false)
