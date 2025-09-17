@@ -1,7 +1,7 @@
 "use client"
 
 import { useState, useEffect } from 'react'
-import { supabase } from '@/lib/supabase'
+import { createClientComponentClient } from '@supabase/auth-helpers-nextjs'
 import { Database } from '@/lib/database.types'
 import { badgeGenerator, BadgeGenerationData } from '@/lib/badge-generator'
 
@@ -9,6 +9,7 @@ type Badge = Database['public']['Tables']['badges']['Row']
 type BadgeInsert = Database['public']['Tables']['badges']['Insert']
 
 export function useBadges(eventId?: string) {
+  const supabase = createClientComponentClient<Database>()
   const [badges, setBadges] = useState<Badge[]>([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)

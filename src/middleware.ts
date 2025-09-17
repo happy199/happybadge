@@ -6,28 +6,23 @@ export async function middleware(req: NextRequest) {
   const res = NextResponse.next()
   const supabase = createMiddlewareClient({ req, res })
 
-  // This will refresh the session cookie
-  await supabase.auth.getSession()
+  const {
+    data: { session },
+  } = await supabase.auth.getSession()
 
-  // My custom logic for protected routes from previous versions
-  const protectedRoutes = ['/dashboard']
-  const authRoutes = ['/auth/login', '/auth/register', '/auth/forgot-password', '/auth/reset-password']
   const { pathname } = req.nextUrl
 
-  const { data: { session } } = await supabase.auth.getSession()
-
-  const isProtectedRoute = protectedRoutes.some(route => pathname.startsWith(route))
-  const isAuthRoute = authRoutes.some(route => pathname.startsWith(route))
-
-  if (isProtectedRoute && !session) {
+  // Si l'utilisateur n'est pas connecté et essaie d'accéder au dashboard
+  if (!session && pathname.startsWith('/dashboard')) {
     const redirectUrl = new URL('/auth/login', req.url)
     redirectUrl.searchParams.set('redirect', pathname)
     return NextResponse.redirect(redirectUrl)
   }
 
-  if (isAuthRoute && session) {
-    const redirectTo = req.nextUrl.searchParams.get('redirect') || '/dashboard'
-    return NextResponse.redirect(new URL(redirectTo, req.url))
+  // Si l'utilisateur est connecté et essaie d'accéder aux pages d'authentification
+  const authRoutes = ['/auth/login', '/auth/register', '/auth/forgot-password', '/auth/reset-password']
+  if (session && authRoutes.some(route => pathname.startsWith(route))) {
+    return NextResponse.redirect(new URL('/dashboard', req.url))
   }
 
   return res

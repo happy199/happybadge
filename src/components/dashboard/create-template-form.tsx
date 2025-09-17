@@ -6,7 +6,7 @@ import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { useToast } from '@/hooks/use-toast'
-import { supabase } from '@/lib/supabase' // Using the old singleton client
+import { createClientComponentClient } from '@supabase/auth-helpers-nextjs'
 import { Upload } from 'lucide-react'
 import type { Database } from '@/lib/database.types'
 
@@ -27,6 +27,7 @@ export default function CreateTemplateForm({
   userId,
   initialData = null,
 }: CreateTemplateFormProps) {
+  const supabase = createClientComponentClient<Database>()
   const [name, setName] = useState('')
   const [shape, setShape] = useState('square')
   const [frameImage, setFrameImage] = useState<File | null>(null)

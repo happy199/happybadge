@@ -7,10 +7,12 @@ import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
-import { supabase } from '@/lib/supabase'
+import { createClientComponentClient } from '@supabase/auth-helpers-nextjs'
 import { useToast } from '@/hooks/use-toast'
+import { Database } from '@/lib/database.types'
 
 export default function RegisterPage() {
+  const supabase = createClientComponentClient<Database>()
   const [formData, setFormData] = useState({
     firstName: '',
     lastName: '',
