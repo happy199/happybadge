@@ -7,15 +7,16 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { Textarea } from '@/components/ui/textarea'
-import { createClient } from '@/lib/supabase'
+import { createClientComponentClient } from '@supabase/auth-helpers-nextjs'
 import { useAuth } from '@/components/providers/auth-provider'
+import { Database } from '@/lib/database.types'
 import { useToast } from '@/hooks/use-toast'
 import { generateSlug } from '@/lib/utils'
 import { ArrowLeft, Calendar, MapPin, Upload } from 'lucide-react'
 import Link from 'next/link'
 
 export default function NewEventPage() {
-  const supabase = createClient()
+  const supabase = createClientComponentClient<Database>()
   const { user } = useAuth()
   const router = useRouter()
   const { toast } = useToast()

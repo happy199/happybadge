@@ -1,7 +1,7 @@
 "use client"
 
 import { useState, useEffect, useCallback } from 'react'
-import { createClient } from '@/lib/supabase'
+import { createClientComponentClient } from '@supabase/auth-helpers-nextjs'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { Label } from '@/components/ui/label'
@@ -18,13 +18,39 @@ type BadgeTemplateManagerProps = {
 }
 
 export default function BadgeTemplateManager({ eventId, userId }: BadgeTemplateManagerProps) {
-  const [supabase] = useState(() => createClient())
+  const supabase = createClientComponentClient<Database>()
   const [templates, setTemplates] = useState<BadgeTemplate[]>([])
   const [loading, setLoading] = useState(true)
   const [showCreateForm, setShowCreateForm] = useState(false)
   const [editingTemplate, setEditingTemplate] = useState<BadgeTemplate | null>(null)
   const [viewingTemplate, setViewingTemplate] = useState<BadgeTemplate | null>(null)
   const { toast } = useToast()
+
+  const fetchTemplates = useCallback(async () => {
+    setLoading(true)
+    try {
+      const { data, error } = await supabase
+        .from('event_badge_templates')
+        .select('*')
+        .eq('event_id', eventId)
+
+      if (error) throw error
+
+      setTemplates(data || [])
+    } catch (error) {
+      toast({
+        title: "Erreur",
+        description: "Impossible de charger les modèles de badges.",
+        variant: "destructive",
+      })
+    } finally {
+      setLoading(false)
+    }
+  }, [eventId, toast])
+
+  useEffect(() => {
+    fetchTemplates()
+  }, [fetchTemplates])
 
   const handleDownload = async () => {
     if (!viewingTemplate) return
@@ -132,32 +158,6 @@ export default function BadgeTemplateManager({ eventId, userId }: BadgeTemplateM
       }
     }
   }
-
-  const fetchTemplates = useCallback(async () => {
-    setLoading(true)
-    try {
-      const { data, error } = await supabase
-        .from('event_badge_templates')
-        .select('*')
-        .eq('event_id', eventId)
-
-      if (error) throw error
-
-      setTemplates(data || [])
-    } catch (error) {
-      toast({
-        title: "Erreur",
-        description: "Impossible de charger les modèles de badges.",
-        variant: "destructive",
-      })
-    } finally {
-      setLoading(false)
-    }
-  }, [eventId, toast, supabase])
-
-  useEffect(() => {
-    fetchTemplates()
-  }, [fetchTemplates])
 
   if (showCreateForm) {
     return (

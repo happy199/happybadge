@@ -1,11 +1,16 @@
-import { createServerSupabaseClient } from '@/lib/supabase'
-import { cookies } from 'next/headers'
 import { NextResponse } from 'next/server'
 import sharp from 'sharp'
 import { createClient } from '@supabase/supabase-js'
+import type { Database } from '@/lib/database.types'
+
+// Public client to fetch public templates
+const supabase = createClient<Database>(
+  process.env.NEXT_PUBLIC_SUPABASE_URL!,
+  process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
+)
 
 // Admin client for analytics insertion, bypassing RLS
-const supabaseAdmin = createClient(
+const supabaseAdmin = createClient<Database>(
   process.env.NEXT_PUBLIC_SUPABASE_URL!,
   process.env.SUPABASE_SERVICE_ROLE_KEY!
 )
@@ -19,16 +24,13 @@ export async function POST(request: Request) {
     return new NextResponse('Missing userImage or templateId', { status: 400 })
   }
 
-  const cookieStore = cookies()
-  const supabase = createServerSupabaseClient(cookieStore)
-
   try {
-    // 1. Fetch the template data using the standard client to respect RLS
+    // 1. Fetch the template data using the public client
     const { data: template, error: templateError } = await supabase
       .from('event_badge_templates')
       .select('frame_image_url, shape')
       .eq('id', templateId)
-      .eq('is_public', true) // Double-check it's public
+      .eq('is_public', true)
       .single()
 
     if (templateError || !template) {
@@ -47,7 +49,6 @@ export async function POST(request: Request) {
     const frameWidth = frameMetadata.width || 512
     const frameHeight = frameMetadata.height || 512
 
-    // Resize user image to fit (e.g., 80% of frame size, centered)
     const userImageResized = await sharp(userImageBuffer)
       .resize({
         width: Math.floor(frameWidth * 0.8),
@@ -57,15 +58,15 @@ export async function POST(request: Request) {
       })
       .toBuffer()
 
-    // If shape is circle, apply a circular mask
     let finalUserImage = userImageResized;
     if (template.shape === 'circle') {
-      const radius = Math.floor(frameWidth * 0.4)
+      const radius = Math.floor((frameWidth * 0.8) / 2)
       const circleSvg = Buffer.from(
         `<svg><circle cx="${radius}" cy="${radius}" r="${radius}" /></svg>`
       )
       finalUserImage = await sharp(userImageResized)
         .composite([{ input: circleSvg, blend: 'dest-in' }])
+        .png() // Ensure output is png for transparency
         .toBuffer()
     }
 
@@ -96,7 +97,6 @@ export async function POST(request: Request) {
 
   } catch (error: any) {
     console.error("Error generating badge:", error);
-    // Track failed attempt
     await supabaseAdmin.from('event_badge_generations').insert({
       template_id: templateId,
       metadata: { success: false, error: error.message },

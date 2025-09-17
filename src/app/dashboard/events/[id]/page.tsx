@@ -1,4 +1,4 @@
-import { createServerSupabaseClient } from '@/lib/supabase'
+import { createServerComponentClient } from '@supabase/auth-helpers-nextjs'
 import { cookies } from 'next/headers'
 import { notFound } from 'next/navigation'
 import Link from 'next/link'
@@ -6,7 +6,7 @@ import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { ArrowLeft, Calendar, MapPin } from 'lucide-react'
 
-// import BadgeTemplateManager from '@/components/dashboard/badge-template-manager'
+import BadgeTemplateManager from '@/components/dashboard/badge-template-manager'
 
 type EventDetailPageProps = {
   params: {
@@ -15,8 +15,7 @@ type EventDetailPageProps = {
 }
 
 export default async function EventDetailPage({ params }: EventDetailPageProps) {
-  const cookieStore = cookies()
-  const supabase = createServerSupabaseClient(cookieStore)
+  const supabase = createServerComponentClient({ cookies })
 
   const { data: { session } } = await supabase.auth.getSession()
   const user = session?.user
@@ -31,14 +30,12 @@ export default async function EventDetailPage({ params }: EventDetailPageProps) 
     notFound()
   }
 
-  // Ensure the logged-in user owns the event
   if (event.user_id !== user.id) {
     notFound()
   }
 
   return (
     <div className="min-h-screen bg-gray-50">
-      {/* Header */}
       <header className="bg-white border-b">
         <div className="container mx-auto px-4 py-4 flex items-center justify-between">
           <div className="flex items-center space-x-4">
@@ -81,7 +78,7 @@ export default async function EventDetailPage({ params }: EventDetailPageProps) 
             </CardContent>
           </Card>
 
-          {/* <BadgeTemplateManager eventId={event.id} userId={user.id} /> */}
+          <BadgeTemplateManager eventId={event.id} userId={user.id} />
         </div>
       </div>
     </div>

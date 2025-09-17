@@ -1,7 +1,7 @@
-import { createServerClient } from '@/lib/supabase'
-import { cookies } from 'next/headers'
+import { createClient } from '@supabase/supabase-js'
 import { notFound } from 'next/navigation'
-import BadgeGenerator from '@/components/public/badge-generator'
+import PublicBadgeCreator from '@/components/public/public-badge-creator'
+import type { Database } from '@/lib/database.types'
 
 type PublicBadgePageProps = {
   params: {
@@ -10,12 +10,14 @@ type PublicBadgePageProps = {
 }
 
 export default async function PublicBadgePage({ params }: PublicBadgePageProps) {
-  const cookieStore = cookies()
-  const supabase = createServerClient(cookieStore)
+  const supabase = createClient<Database>(
+    process.env.NEXT_PUBLIC_SUPABASE_URL!,
+    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
+  )
 
   const { data: template, error } = await supabase
     .from('event_badge_templates')
-    .select('*')
+    .select('id, name, frame_image_url')
     .eq('id', params.id)
     .eq('is_public', true)
     .single()
@@ -39,25 +41,11 @@ export default async function PublicBadgePage({ params }: PublicBadgePageProps) 
         </header>
 
         <main>
-          <div className="bg-white p-6 rounded-lg shadow-md">
-            <h2 className="text-lg font-semibold text-center mb-4">{template.name}</h2>
-
-            <div className="relative mb-4 aspect-square w-full bg-gray-200 rounded-lg flex items-center justify-center overflow-hidden">
-              <img
-                src={template.frame_image_url}
-                alt={`Cadre pour ${template.name}`}
-                className="absolute inset-0 w-full h-full object-cover z-10"
-              />
-              <div className="w-full h-full bg-gray-300/50 flex items-center justify-center">
-                <p className="text-gray-500 text-sm">Votre photo ici</p>
-              </div>
-            </div>
-
-            <BadgeGenerator
-              templateId={template.id}
-              frameImageUrl={template.frame_image_url}
-            />
-          </div>
+          <PublicBadgeCreator
+            templateId={template.id}
+            templateName={template.name}
+            frameImageUrl={template.frame_image_url}
+          />
         </main>
 
         <footer className="text-center mt-8">
