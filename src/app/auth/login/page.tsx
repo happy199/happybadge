@@ -38,8 +38,8 @@ export default function LoginPage() {
         title: "Connexion réussie",
         description: "Vous allez être redirigé.",
       })
-      // La redirection sera gérée par le middleware
-      router.refresh()
+      // Rediriger directement vers le dashboard
+      router.push('/dashboard')
     }
 
     setLoading(false)
