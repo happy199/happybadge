@@ -1,6 +1,58 @@
 export type Database = {
   public: {
     Tables: {
+      event_badge_templates: {
+        Row: {
+          id: string
+          event_id: string
+          user_id: string
+          name: string
+          frame_image_url: string
+          shape: string
+          is_public: boolean
+          created_at: string
+        }
+        Insert: {
+          id?: string
+          event_id: string
+          user_id: string
+          name: string
+          frame_image_url: string
+          shape?: string
+          is_public?: boolean
+          created_at?: string
+        }
+        Update: {
+          id?: string
+          event_id?: string
+          user_id?: string
+          name?: string
+          frame_image_url?: string
+          shape?: string
+          is_public?: boolean
+          created_at?: string
+        }
+      }
+      event_badge_generations: {
+        Row: {
+          id: number
+          template_id: string
+          generated_at: string
+          metadata: Record<string, unknown> | null
+        }
+        Insert: {
+          id?: number
+          template_id: string
+          generated_at?: string
+          metadata?: Record<string, unknown> | null
+        }
+        Update: {
+          id?: number
+          template_id?: string
+          generated_at?: string
+          metadata?: Record<string, unknown> | null
+        }
+      }
       users: {
         Row: {
           id: string

@@ -26,12 +26,16 @@ export async function POST(request: Request) {
 
   try {
     // 1. Fetch the template data using the public client
+    type BadgeTemplate = {
+      frame_image_url: string;
+      shape: string;
+    }
     const { data: template, error: templateError } = await supabase
       .from('event_badge_templates')
       .select('frame_image_url, shape')
       .eq('id', templateId)
       .eq('is_public', true)
-      .single()
+      .single<BadgeTemplate>()
 
     if (templateError || !template) {
       return new NextResponse('Template not found or not public', { status: 404 })
@@ -87,7 +91,7 @@ export async function POST(request: Request) {
     })
 
     // 5. Return the final image for download
-    return new NextResponse(finalImageBuffer, {
+    return new NextResponse(Buffer.from(finalImageBuffer), {
       status: 200,
       headers: {
         'Content-Type': 'image/png',
