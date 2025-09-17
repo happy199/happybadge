@@ -18,69 +18,31 @@ export default function LoginPage() {
   const searchParams = useSearchParams()
   const { toast } = useToast()
 
-  // Récupérer l'URL de redirection depuis les paramètres
-  const redirectTo = searchParams.get('redirect') || '/dashboard'
-
-  // Vérifier si l'utilisateur est déjà connecté (seulement une fois)
-  useEffect(() => {
-    let isMounted = true
-
-    const checkUser = async () => {
-      try {
-        const { data: { session } } = await supabase.auth.getSession()
-        if (session && isMounted) {
-          // Utiliser window.location pour forcer une navigation complète
-          window.location.href = redirectTo
-        }
-      } catch (error) {
-        console.error('Error checking session:', error)
-      }
-    }
-
-    checkUser()
-
-    return () => {
-      isMounted = false
-    }
-  }, []) // Supprimer redirectTo des dépendances pour éviter les rechargements
-
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault()
     setLoading(true)
 
-    try {
-      const { data, error } = await supabase.auth.signInWithPassword({
-        email,
-        password,
-      })
+    const { error } = await supabase.auth.signInWithPassword({
+      email,
+      password,
+    })
 
-      if (error) {
-        toast({
-          title: "Erreur de connexion",
-          description: error.message,
-          variant: "destructive",
-        })
-      } else if (data.user) {
-        toast({
-          title: "Connexion réussie",
-          description: "Vous êtes maintenant connecté.",
-        })
-
-        // Attendre un peu pour que la session soit mise à jour
-        setTimeout(() => {
-          // Utiliser window.location pour forcer une navigation complète
-          window.location.href = redirectTo
-        }, 100)
-      }
-    } catch (error) {
+    if (error) {
       toast({
-        title: "Erreur",
-        description: "Une erreur inattendue s'est produite.",
+        title: "Erreur de connexion",
+        description: error.message,
         variant: "destructive",
       })
-    } finally {
-      setLoading(false)
+    } else {
+      toast({
+        title: "Connexion réussie",
+        description: "Vous allez être redirigé.",
+      })
+      // La redirection sera gérée par le middleware
+      router.refresh()
     }
+
+    setLoading(false)
   }
 
   const handleGoogleLogin = async () => {

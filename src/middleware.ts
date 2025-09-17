@@ -6,50 +6,24 @@ export async function middleware(req: NextRequest) {
   const res = NextResponse.next()
   const supabase = createMiddlewareClient({ req, res })
 
-  // This will refresh the session cookie
-  await supabase.auth.getSession()
+  const {
+    data: { session },
+  } = await supabase.auth.getSession()
 
-  const { data: { session } } = await supabase.auth.getSession()
-
-  // Routes protégées
-  const protectedRoutes = ['/dashboard']
-  const authRoutes = ['/auth/login', '/auth/register', '/auth/forgot-password', '/auth/reset-password']
   const { pathname } = req.nextUrl
 
-  // Vérifier si la route est protégée
-  const isProtectedRoute = protectedRoutes.some(route => pathname.startsWith(route))
-  const isAuthRoute = authRoutes.some(route => pathname.startsWith(route))
-
-  // Pour les routes protégées, vérifier la session
-  if (isProtectedRoute) {
-    const {
-      data: { session },
-    } = await supabase.auth.getSession()
-
-    if (!session) {
-      const redirectUrl = new URL('/auth/login', req.url)
-      redirectUrl.searchParams.set('redirect', pathname)
-      return NextResponse.redirect(redirectUrl)
-    }
+  // Si l'utilisateur n'est pas connecté et essaie d'accéder au dashboard
+  if (!session && pathname.startsWith('/dashboard')) {
+    const redirectUrl = new URL('/auth/login', req.url)
+    redirectUrl.searchParams.set('redirect', pathname)
+    return NextResponse.redirect(redirectUrl)
   }
 
-  // Pour les routes d'auth, vérifier si l'utilisateur est déjà connecté
-  if (isAuthRoute) {
-    const {
-      data: { session },
-    } = await supabase.auth.getSession()
-
-    if (session) {
-      const redirectTo = req.nextUrl.searchParams.get('redirect') || '/dashboard'
-      return NextResponse.redirect(new URL(redirectTo, req.url))
-    }
+  // Si l'utilisateur est connecté et essaie d'accéder aux pages d'authentification
+  const authRoutes = ['/auth/login', '/auth/register', '/auth/forgot-password', '/auth/reset-password']
+  if (session && authRoutes.some(route => pathname.startsWith(route))) {
+    return NextResponse.redirect(new URL('/dashboard', req.url))
   }
-
-  // Ajouter des headers de sécurité
-  res.headers.set('X-Frame-Options', 'DENY')
-  res.headers.set('X-Content-Type-Options', 'nosniff')
-  res.headers.set('Referrer-Policy', 'origin-when-cross-origin')
-  res.headers.set('Permissions-Policy', 'camera=(), microphone=(), geolocation=()')
 
   return res
 }
